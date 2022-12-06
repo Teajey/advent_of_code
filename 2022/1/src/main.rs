@@ -10,7 +10,7 @@ fn main() {
         .read_to_string(&mut data)
         .expect("Couldn't read stdin");
 
-    let max = data
+    let mut all_total_calories: Vec<u32> = data
         .split("\n\n")
         .map(|elf_calories| {
             elf_calories
@@ -25,9 +25,13 @@ fn main() {
                         )
                     }
                 })
-                .sum::<u32>()
+                .sum()
         })
-        .max();
+        .collect();
 
-    println!("{max:?}");
+    all_total_calories.sort();
+
+    let top_3_calories_total = all_total_calories.into_iter().rev().take(3).sum::<u32>();
+
+    println!("{top_3_calories_total:?}");
 }
