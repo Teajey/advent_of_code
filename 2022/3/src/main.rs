@@ -19,6 +19,22 @@ fn sort_and_dedup_chars(string: &str) -> Vec<char> {
     chars
 }
 
+fn chunk_as_threes<T>(data: &Vec<T>) -> Vec<(&T, &T, &T)> {
+    let mut chunks = Vec::<(&T, &T, &T)>::new();
+
+    for i in 0..(data.len() / 3) {
+        let slice_start = i * 3;
+        let chunk = (
+            &data[slice_start],
+            &data[slice_start + 1],
+            &data[slice_start + 2],
+        );
+        chunks.push(chunk);
+    }
+
+    chunks
+}
+
 fn main() -> Result<()> {
     let stdin = std::io::stdin();
     let mut stdin = stdin.lock();
@@ -29,23 +45,24 @@ fn main() -> Result<()> {
         .read_to_string(&mut data)
         .map_err(|err| format!("Couldn't read stdin: {err}"))?;
 
-    let dupes = data
-        .split('\n')
-        .map(|rucksack| {
-            let mid = (f64::from(rucksack.len() as u32) / 2.).ceil() as usize;
-            let (fore, aft) = rucksack.split_at(mid);
+    let data = data.split('\n').collect::<Vec<_>>();
 
-            let fore = sort_and_dedup_chars(fore);
-            let aft = sort_and_dedup_chars(aft);
+    let priorities = chunk_as_threes(&data)
+        .into_iter()
+        .map(|chunk| {
+            let first = sort_and_dedup_chars(chunk.0);
+            let second = sort_and_dedup_chars(chunk.1);
+            let third = sort_and_dedup_chars(chunk.2);
 
-            fore.into_iter()
-                .find(|c| aft.contains(c))
-                .ok_or_else(|| "Found a rucksack without a duplicate".to_owned())
+            first
+                .into_iter()
+                .find(|c| second.contains(c) && third.contains(c))
+                .ok_or_else(|| "Found a group without a common type".to_owned())
                 .map(item_priority)
         })
         .collect::<Result<Result<Vec<_>>>>()??;
 
-    println!("{}", dupes.into_iter().sum::<u32>());
+    println!("{}", priorities.into_iter().sum::<u32>());
 
     Ok(())
 }
@@ -64,5 +81,20 @@ mod test {
         assert_eq!(19, super::item_priority('s')?);
 
         Ok(())
+    }
+
+    #[test]
+    fn chop_into_threes() {
+        let list = vec![1, 2, 3, 4, 5, 6];
+
+        let chunks = super::chunk_as_threes(&list);
+
+        assert_eq!(chunks, vec![(&1, &2, &3), (&4, &5, &6)]);
+
+        let list = vec![1, 2, 3, 4, 5];
+
+        let chunks = super::chunk_as_threes(&list);
+
+        assert_eq!(chunks, vec![(&1, &2, &3)]);
     }
 }
