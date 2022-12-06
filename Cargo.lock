@@ -5,3 +5,7 @@ version = 3
 [[package]]
 name = "elf-calories"
 version = "0.1.0"
+
+[[package]]
+name = "rock_paper_scissors"
+version = "0.1.0"
