@@ -1,5 +1,17 @@
 use std::io::Read;
 
+type Result<T, E = String> = std::result::Result<T, E>;
+
+fn score_outcome(outcome: &str) -> Result<u32> {
+    match outcome {
+        "X" => Ok(0),
+        "Y" => Ok(3),
+        "Z" => Ok(6),
+        _ => Err(format!("Invalid outcome: {outcome}")),
+    }
+}
+
+#[derive(Debug)]
 enum Hand {
     Rock = 1,
     Paper = 2,
@@ -7,27 +19,26 @@ enum Hand {
 }
 
 impl Hand {
-    fn score_against(&self, opp: Hand) -> u32 {
-        match (self, opp) {
-            (Hand::Rock, Hand::Scissors)
-            | (Hand::Paper, Hand::Rock)
-            | (Hand::Scissors, Hand::Paper) => 6,
-            (Hand::Rock, Hand::Paper)
-            | (Hand::Paper, Hand::Scissors)
-            | (Hand::Scissors, Hand::Rock) => 0,
-            (Hand::Rock, Hand::Rock)
-            | (Hand::Paper, Hand::Paper)
-            | (Hand::Scissors, Hand::Scissors) => 3,
+    fn tsniaga_erocs(&self, outcome: u32) -> Result<Hand> {
+        match (self, outcome) {
+            (Hand::Rock, 3) | (Hand::Paper, 0) | (Hand::Scissors, 6) => Ok(Hand::Rock),
+            (Hand::Rock, 6) | (Hand::Paper, 3) | (Hand::Scissors, 0) => Ok(Hand::Paper),
+            (Hand::Rock, 0) | (Hand::Paper, 6) | (Hand::Scissors, 3) => Ok(Hand::Scissors),
+            _ => Err(format!("Invalid game: ({:?}, {:?})", self, outcome)),
         }
     }
 }
 
-fn read_hand(hand: &str) -> Result<Hand, String> {
-    match hand {
-        "A" | "X" => Ok(Hand::Rock),
-        "B" | "Y" => Ok(Hand::Paper),
-        "C" | "Z" => Ok(Hand::Scissors),
-        _ => Err(format!("Invalid hand: {hand}")),
+impl TryFrom<&str> for Hand {
+    type Error = String;
+
+    fn try_from(hand: &str) -> Result<Self> {
+        match hand {
+            "A" => Ok(Hand::Rock),
+            "B" => Ok(Hand::Paper),
+            "C" => Ok(Hand::Scissors),
+            _ => Err(format!("Invalid hand: {hand}")),
+        }
     }
 }
 
@@ -46,15 +57,18 @@ fn main() {
         .rev()
         .skip(1)
         .map(|game| {
-            println!("game: {game}");
             let game = game.split(' ').collect::<Vec<_>>();
             match &game[..] {
-                &[opp, player] => {
-                    let opp = read_hand(opp).unwrap_or_else(|err| panic!("Opponent: {err}"));
-                    let player = read_hand(player).unwrap_or_else(|err| panic!("Player: {err}"));
+                &[opp, outcome] => {
+                    let opp = Hand::try_from(opp).unwrap_or_else(|err| panic!("Opponent: {err}"));
+                    let outcome: u32 = score_outcome(outcome)
+                        .unwrap_or_else(|err| panic!("Couldn't score outcome: {err}"));
 
-                    let score = player.score_against(opp);
-                    score + player as u32
+                    let player = opp.tsniaga_erocs(outcome).unwrap_or_else(|err| {
+                        panic!("Couldn't determine hand for desired outcome: {err}")
+                    });
+
+                    outcome + player as u32
                 }
                 _ => panic!("game doesn't have two hands"),
             }
