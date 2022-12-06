@@ -3,6 +3,10 @@
 version = 3
 
 [[package]]
+name = "camp_cleanup"
+version = "0.1.0"
+
+[[package]]
 name = "elf-calories"
 version = "0.1.0"
 
