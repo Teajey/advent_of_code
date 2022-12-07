@@ -95,8 +95,8 @@ fn main() -> Result<()> {
         .map(|instruction| {
             let instruction = instruction.split(' ').collect::<Vec<_>>();
             let &[_, quantity, _, origin, _, destination] = &instruction[..] else {
-            return Err(format!("Move instruction without the expected 6 tokens: {instruction:?}"))
-        };
+                return Err(format!("Move instruction without the expected 6 tokens: {instruction:?}"))
+            };
             let quantity = quantity
                 .parse::<usize>()
                 .map_err(|err| format!("Couldn't parse quantity in move instruction: {err}"))?;
@@ -111,7 +111,15 @@ fn main() -> Result<()> {
         })
         .collect::<Result<Vec<_>>>()?;
 
-    for (quantity, origin, destination) in instructions {
+    let total_instructions = instructions.len();
+    for (i, (quantity, origin, destination)) in instructions.into_iter().enumerate() {
+        println!(
+            "Instruction {:07}/{total_instructions}: Moving {} crates from {} to {}",
+            i + 1,
+            quantity,
+            origin,
+            destination
+        );
         supply.move_crates(quantity, origin, destination)?;
     }
 
