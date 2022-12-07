@@ -33,7 +33,7 @@ impl Supply {
 
             let new_length = origin.len() - quantity;
 
-            origin.drain(new_length..).rev().collect::<Vec<_>>()
+            origin.drain(new_length..).collect::<Vec<_>>()
         };
 
         let destination = self
