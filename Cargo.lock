@@ -11,6 +11,10 @@ name = "elf-calories"
 version = "0.1.0"
 
 [[package]]
+name = "no_space_left_on_device"
+version = "0.1.0"
+
+[[package]]
 name = "rock_paper_scissors"
 version = "0.1.0"
 
