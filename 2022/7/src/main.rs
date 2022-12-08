@@ -30,7 +30,7 @@ impl<'a> TryFrom<Split<'a, char>> for Command<'a> {
 #[derive(Debug)]
 enum Item<'a> {
     Directory(Directory<'a>),
-    File { size: u32 },
+    File { size: i32 },
 }
 
 impl<'a> Item<'a> {
@@ -38,7 +38,7 @@ impl<'a> Item<'a> {
         Self::Directory(Directory::default())
     }
 
-    fn size(&self) -> u32 {
+    fn size(&self) -> i32 {
         match self {
             Item::Directory(directory) => directory.size(),
             Item::File { size } => *size,
@@ -65,7 +65,7 @@ impl<'a> TryFrom<Split<'a, char>> for Line<'a> {
                 Item::new_directory(),
             ))),
             Some(probably_size) => {
-                let size = probably_size.parse::<u32>().map_err(|_| {
+                let size = probably_size.parse::<i32>().map_err(|_| {
                     format!("Couldn't parse token ({probably_size}) as a file size")
                 })?;
                 let name = tokens
@@ -100,7 +100,7 @@ enum Context {
 }
 
 impl<'a> Directory<'a> {
-    fn size(&self) -> u32 {
+    fn size(&self) -> i32 {
         self.items.iter().map(|(_, item)| item.size()).sum()
     }
 
@@ -208,20 +208,28 @@ fn main() -> Result<()> {
 
     let fs = Directory::reconstruct_from_cmdline_history(data.split('\n'))?;
 
-    let total = fs
+    let mut dir_sizes = fs
         .all_directories()
-        .iter()
-        .filter_map(|dir| {
-            let size = dir.size();
-            if size < 100_000 {
-                Some(size)
-            } else {
-                None
-            }
-        })
-        .sum::<u32>();
+        .into_iter()
+        .map(|dir| dir.size())
+        .collect::<Vec<_>>();
 
-    println!("{total}");
+    dir_sizes.sort();
+
+    let space_used = dir_sizes
+        .last()
+        .ok_or("Couldn't get total_space_used. dir_sizes is empty.")?;
+
+    let unused_space = 70_000_000 - space_used;
+
+    let space_needed = 30_000_000 - unused_space;
+
+    let delete_this = dir_sizes
+        .into_iter()
+        .find(|size| *size > space_needed)
+        .ok_or_else(|| "Didn't find a size".to_owned())?;
+
+    println!("{delete_this}");
 
     Ok(())
 }
