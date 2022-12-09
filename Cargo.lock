@@ -7,6 +7,10 @@ name = "camp_cleanup"
 version = "0.1.0"
 
 [[package]]
+name = "common"
+version = "0.1.0"
+
+[[package]]
 name = "elf-calories"
 version = "0.1.0"
 
@@ -25,6 +29,13 @@ version = "0.1.0"
 [[package]]
 name = "supply_stacks"
 version = "0.1.0"
+
+[[package]]
+name = "treetop_tree_house"
+version = "0.1.0"
+dependencies = [
+ "common",
+]
 
 [[package]]
 name = "tuning_trouble"
