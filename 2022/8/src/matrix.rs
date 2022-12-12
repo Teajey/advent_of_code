@@ -7,9 +7,9 @@ use std::{
 use common::{e, Failure, Result};
 
 #[derive(Clone)]
-pub struct Matrix(Box<[Box<[u32]>]>, usize);
+pub struct Matrix<T: Clone + Copy>(Box<[Box<[T]>]>, usize);
 
-impl TryFrom<String> for Matrix {
+impl TryFrom<String> for Matrix<u8> {
     type Error = Failure;
 
     fn try_from(string: String) -> Result<Self, Self::Error> {
@@ -17,7 +17,11 @@ impl TryFrom<String> for Matrix {
             .split('\n')
             .map(|ln| {
                 ln.chars()
-                    .map(|c| c.to_digit(10).ok_or_else(|| e!("Non-digit in input!")))
+                    .map(|c| {
+                        c.to_digit(10)
+                            .map(|n| n as u8)
+                            .ok_or_else(|| e!("Non-digit in input!"))
+                    })
                     .collect::<Result<Vec<_>>>()
                     .map(|v| v.into_boxed_slice())
             })
@@ -34,14 +38,25 @@ impl TryFrom<String> for Matrix {
     }
 }
 
-impl Index<usize> for Matrix {
-    type Output = Box<[u32]>;
+impl From<Matrix<u8>> for Matrix<u32> {
+    fn from(mat: Matrix<u8>) -> Self {
+        let length = mat.1;
+        let mat = mat
+            .iter()
+            .map(|row| row.iter().map(|n| *n as u32).collect::<Box<[_]>>())
+            .collect::<Box<[_]>>();
+        Matrix(mat, length)
+    }
+}
+
+impl<T: Clone + Copy> Index<usize> for Matrix<T> {
+    type Output = Box<[T]>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
 }
 
-impl IndexMut<usize> for Matrix {
+impl<T: Clone + Copy> IndexMut<usize> for Matrix<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }
@@ -62,7 +77,7 @@ fn quarter_turn_matrix_index((x, y): (usize, usize), length: f32) -> (usize, usi
     (x as usize, y as usize)
 }
 
-impl Matrix {
+impl<T: Clone + Copy> Matrix<T> {
     pub fn rotate(self) -> Self {
         let mut new = self.clone();
 
@@ -76,11 +91,11 @@ impl Matrix {
         new
     }
 
-    pub fn iter(&self) -> Iter<'_, Box<[u32]>> {
+    pub fn iter(&self) -> Iter<'_, Box<[T]>> {
         self.0.iter()
     }
 
-    pub fn iter_mut(&mut self) -> IterMut<'_, Box<[u32]>> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Box<[T]>> {
         self.0.iter_mut()
     }
 }
@@ -91,7 +106,7 @@ mod test {
 
     use super::{Matrix, Result};
 
-    fn test_matrix() -> Result<Matrix> {
+    fn test_matrix() -> Result<Matrix<u8>> {
         let data = r#"30373
 25512
 65332

@@ -6,7 +6,7 @@ use common::{e, get_input, Failure, Result};
 
 use matrix::Matrix;
 
-fn trees_visible_across(trees: &[u32]) -> Vec<u32> {
+fn trees_visible_across<T: PartialOrd>(trees: &[T]) -> Vec<u32> {
     let mut mask = vec![0; trees.len()];
 
     for i in 0..trees.len() {
@@ -21,8 +21,8 @@ fn trees_visible_across(trees: &[u32]) -> Vec<u32> {
     mask
 }
 
-fn scenic_score_map(mut forest: Matrix) -> Matrix {
-    let mut scenic_score_map = forest.clone();
+fn scenic_score_map(mut forest: Matrix<u8>) -> Matrix<u32> {
+    let mut scenic_score_map: Matrix<u32> = forest.clone().into();
 
     for row in scenic_score_map.iter_mut() {
         let across_score = trees_visible_across(row.deref());
@@ -44,7 +44,7 @@ fn scenic_score_map(mut forest: Matrix) -> Matrix {
 }
 
 fn main() -> Result<()> {
-    let forest: Matrix = get_input()?.try_into()?;
+    let forest: Matrix<u8> = get_input()?.try_into()?;
 
     let ssm = scenic_score_map(forest);
 
@@ -66,7 +66,7 @@ mod test {
 
     use super::{Matrix, Result};
 
-    fn test_matrix() -> Result<Matrix> {
+    fn test_matrix() -> Result<Matrix<u8>> {
         let data = r#"30373
 25512
 65332
@@ -77,8 +77,8 @@ mod test {
         Matrix::try_from(data)
     }
 
-    impl Matrix {
-        pub fn slice_rows(&self) -> Box<[&[u32]]> {
+    impl<T: Clone + Copy> Matrix<T> {
+        pub fn slice_rows(&self) -> Box<[&[T]]> {
             self.iter().map(|row| row.deref()).collect::<Box<[_]>>()
         }
     }
