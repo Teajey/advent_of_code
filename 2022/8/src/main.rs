@@ -6,7 +6,7 @@ use common::{e, get_input, Failure, Result};
 
 use matrix::Matrix;
 
-fn trees_visible_across(trees: &[u8]) -> Vec<u8> {
+fn trees_visible_across(trees: &[u32]) -> Vec<u32> {
     let mut mask = vec![0; trees.len()];
 
     for i in 0..trees.len() {
@@ -29,26 +29,15 @@ fn scenic_score_map(mut forest: Matrix) -> Matrix {
         *row = across_score.into_boxed_slice();
     }
 
-    println!("Initial: {:?}", scenic_score_map);
-
-    for i in 0..3 {
+    for _ in 0..3 {
         forest = forest.rotate();
         scenic_score_map = scenic_score_map.rotate();
-        let mut debug_matrix = vec![];
         for (row, vis_row) in forest.iter().zip(scenic_score_map.iter_mut()) {
             let mut row_mask = trees_visible_across(row.deref());
-            debug_matrix.push(row_mask.clone());
             for (tree, mask_tree) in vis_row.iter_mut().zip(&mut row_mask) {
                 *tree *= *mask_tree;
             }
         }
-
-        let mut debug_matrix = Matrix::debug_try_new(debug_matrix).expect("valid debug matrix");
-        // for _ in 0..3 - i {
-        //     debug_matrix = debug_matrix.rotate();
-        // }
-        println!("scores across {}: {:?}", i + 2, debug_matrix);
-        println!("scenic_score_map {}: {:?}", i + 2, scenic_score_map);
     }
 
     scenic_score_map
@@ -59,8 +48,6 @@ fn main() -> Result<()> {
 
     let ssm = scenic_score_map(forest);
 
-    println!("Scenic Score Map: {:?}", ssm);
-
     let max_scenic_score = ssm
         .iter()
         .map(|row| row.iter().max())
@@ -68,7 +55,7 @@ fn main() -> Result<()> {
         .flatten()
         .ok_or_else(|| e!("Scenic Score Map was empty"))?;
 
-    println!("{}", max_scenic_score);
+    println!("{max_scenic_score}");
 
     Ok(())
 }
@@ -91,7 +78,7 @@ mod test {
     }
 
     impl Matrix {
-        pub fn slice_rows(&self) -> Box<[&[u8]]> {
+        pub fn slice_rows(&self) -> Box<[&[u32]]> {
             self.iter().map(|row| row.deref()).collect::<Box<[_]>>()
         }
     }

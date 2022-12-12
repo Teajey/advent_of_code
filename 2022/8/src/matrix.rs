@@ -1,29 +1,13 @@
 use std::{
     f32::consts::FRAC_PI_2,
-    fmt::Debug,
     ops::{Index, IndexMut},
     slice::{Iter, IterMut},
-    vec,
 };
 
 use common::{e, Failure, Result};
 
 #[derive(Clone)]
-pub struct Matrix(Box<[Box<[u8]>]>, usize);
-
-impl Debug for Matrix {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f)?;
-        for row in self.iter() {
-            for cell in row.iter() {
-                write!(f, "{:>3} ", cell)?;
-            }
-            writeln!(f)?;
-        }
-
-        Ok(())
-    }
-}
+pub struct Matrix(Box<[Box<[u32]>]>, usize);
 
 impl TryFrom<String> for Matrix {
     type Error = Failure;
@@ -33,11 +17,7 @@ impl TryFrom<String> for Matrix {
             .split('\n')
             .map(|ln| {
                 ln.chars()
-                    .map(|c| {
-                        c.to_digit(10)
-                            .map(|n| n as u8)
-                            .ok_or_else(|| e!("Non-digit in input!"))
-                    })
+                    .map(|c| c.to_digit(10).ok_or_else(|| e!("Non-digit in input!")))
                     .collect::<Result<Vec<_>>>()
                     .map(|v| v.into_boxed_slice())
             })
@@ -55,7 +35,7 @@ impl TryFrom<String> for Matrix {
 }
 
 impl Index<usize> for Matrix {
-    type Output = Box<[u8]>;
+    type Output = Box<[u32]>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
@@ -79,30 +59,10 @@ fn quarter_turn_matrix_index((x, y): (usize, usize), length: f32) -> (usize, usi
 
     let x = x + length;
 
-    let x = x as usize;
-    let y = y as usize;
-
-    (x, y)
+    (x as usize, y as usize)
 }
 
 impl Matrix {
-    pub fn debug_try_new(vec2d: Vec<Vec<u8>>) -> Result<Self> {
-        let boxed_slice = vec2d
-            .clone()
-            .into_iter()
-            .map(|row| row.into_boxed_slice())
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
-
-        let length = boxed_slice.len();
-
-        if boxed_slice.iter().any(|row| row.len() != length) {
-            return Err(e!("vec2d is not square: {vec2d:?}"));
-        }
-
-        Ok(Self(boxed_slice, length))
-    }
-
     pub fn rotate(self) -> Self {
         let mut new = self.clone();
 
@@ -116,11 +76,11 @@ impl Matrix {
         new
     }
 
-    pub fn iter(&self) -> Iter<'_, Box<[u8]>> {
+    pub fn iter(&self) -> Iter<'_, Box<[u32]>> {
         self.0.iter()
     }
 
-    pub fn iter_mut(&mut self) -> IterMut<'_, Box<[u8]>> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Box<[u32]>> {
         self.0.iter_mut()
     }
 }
