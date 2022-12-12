@@ -1,13 +1,29 @@
 use std::{
     f32::consts::FRAC_PI_2,
+    fmt::Debug,
     ops::{Index, IndexMut},
     slice::{Iter, IterMut},
+    vec,
 };
 
 use common::{e, Failure, Result};
 
 #[derive(Clone)]
 pub struct Matrix(Box<[Box<[u8]>]>, usize);
+
+impl Debug for Matrix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f)?;
+        for row in self.iter() {
+            for cell in row.iter() {
+                write!(f, "{:>3} ", cell)?;
+            }
+            writeln!(f)?;
+        }
+
+        Ok(())
+    }
+}
 
 impl TryFrom<String> for Matrix {
     type Error = Failure;
@@ -70,6 +86,23 @@ fn quarter_turn_matrix_index((x, y): (usize, usize), length: f32) -> (usize, usi
 }
 
 impl Matrix {
+    pub fn debug_try_new(vec2d: Vec<Vec<u8>>) -> Result<Self> {
+        let boxed_slice = vec2d
+            .clone()
+            .into_iter()
+            .map(|row| row.into_boxed_slice())
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+
+        let length = boxed_slice.len();
+
+        if boxed_slice.iter().any(|row| row.len() != length) {
+            return Err(e!("vec2d is not square: {vec2d:?}"));
+        }
+
+        Ok(Self(boxed_slice, length))
+    }
+
     pub fn rotate(self) -> Self {
         let mut new = self.clone();
 

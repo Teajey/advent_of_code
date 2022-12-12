@@ -2,17 +2,17 @@ mod matrix;
 
 use std::ops::Deref;
 
-use common::{get_input, Result};
+use common::{e, get_input, Failure, Result};
 
 use matrix::Matrix;
 
-fn visible_trees_mask(trees: &[u8]) -> Vec<u8> {
-    let mut mask = vec![1; trees.len()];
+fn trees_visible_across(trees: &[u8]) -> Vec<u8> {
+    let mut mask = vec![0; trees.len()];
 
     for i in 0..trees.len() {
         for j in i + 1..trees.len() {
+            mask[i] += 1;
             if trees[i] <= trees[j] {
-                mask[i] = 0;
                 break;
             }
         }
@@ -21,39 +21,54 @@ fn visible_trees_mask(trees: &[u8]) -> Vec<u8> {
     mask
 }
 
-fn visible_tree_map(mut forest: Matrix) -> Matrix {
-    let mut visible_trees = forest.clone();
+fn scenic_score_map(mut forest: Matrix) -> Matrix {
+    let mut scenic_score_map = forest.clone();
 
-    for row in visible_trees.iter_mut() {
-        let row_mask = visible_trees_mask(row.deref());
-        *row = row_mask.into_boxed_slice();
+    for row in scenic_score_map.iter_mut() {
+        let across_score = trees_visible_across(row.deref());
+        *row = across_score.into_boxed_slice();
     }
 
-    for _ in 0..3 {
+    println!("Initial: {:?}", scenic_score_map);
+
+    for i in 0..3 {
         forest = forest.rotate();
-        visible_trees = visible_trees.rotate();
-        for (row, vis_row) in forest.iter().zip(visible_trees.iter_mut()) {
-            let mut row_mask = visible_trees_mask(row.deref());
+        scenic_score_map = scenic_score_map.rotate();
+        let mut debug_matrix = vec![];
+        for (row, vis_row) in forest.iter().zip(scenic_score_map.iter_mut()) {
+            let mut row_mask = trees_visible_across(row.deref());
+            debug_matrix.push(row_mask.clone());
             for (tree, mask_tree) in vis_row.iter_mut().zip(&mut row_mask) {
-                *tree |= *mask_tree;
+                *tree *= *mask_tree;
             }
         }
+
+        let mut debug_matrix = Matrix::debug_try_new(debug_matrix).expect("valid debug matrix");
+        // for _ in 0..3 - i {
+        //     debug_matrix = debug_matrix.rotate();
+        // }
+        println!("scores across {}: {:?}", i + 2, debug_matrix);
+        println!("scenic_score_map {}: {:?}", i + 2, scenic_score_map);
     }
 
-    visible_trees
+    scenic_score_map
 }
 
 fn main() -> Result<()> {
     let forest: Matrix = get_input()?.try_into()?;
 
-    let visible_trees = visible_tree_map(forest);
+    let ssm = scenic_score_map(forest);
 
-    let total_visible_trees = visible_trees
+    println!("Scenic Score Map: {:?}", ssm);
+
+    let max_scenic_score = ssm
         .iter()
-        .map(|row| row.iter().map(|n| *n as u32).sum::<u32>())
-        .sum::<u32>();
+        .map(|row| row.iter().max())
+        .max()
+        .flatten()
+        .ok_or_else(|| e!("Scenic Score Map was empty"))?;
 
-    println!("{}", total_visible_trees);
+    println!("{}", max_scenic_score);
 
     Ok(())
 }
@@ -82,27 +97,29 @@ mod test {
     }
 
     #[test]
-    fn visible_trees_mask() {
-        let mask = super::visible_trees_mask(&[3, 0, 3, 7, 3]);
+    fn trees_visible_across() {
+        let mask = super::trees_visible_across(&[3, 0, 3, 7, 3]);
 
-        assert_eq!(mask, &[0, 0, 0, 1, 1]);
+        assert_eq!(mask, &[2, 1, 1, 1, 0]);
     }
 
     #[test]
-    fn visible_tree_map() -> Result<()> {
+    fn scenic_score_map() -> Result<()> {
         let forest = test_matrix()?;
 
-        let visible_trees = super::visible_tree_map(forest);
+        let scenic_score_map = super::scenic_score_map(forest);
 
         let expected = [
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 0, 1],
-            [1, 1, 0, 1, 1],
-            [1, 0, 1, 0, 1],
-            [1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0],
+            [0, 1, 4, 1, 0],
+            [0, 6, 1, 2, 0],
+            [0, 1, 8, 3, 0],
+            [0, 0, 0, 0, 0],
         ];
 
-        assert_eq!(visible_trees.slice_rows().deref(), expected);
+        let scenic_score_map = scenic_score_map.rotate();
+
+        assert_eq!(scenic_score_map.slice_rows().deref(), expected);
 
         Ok(())
     }
