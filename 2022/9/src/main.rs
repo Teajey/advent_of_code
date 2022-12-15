@@ -108,7 +108,7 @@ impl TryFrom<&str> for Direction {
 
 fn main() -> Result<()> {
     let data = get_input()?;
-    let mut rope = vec![Point::default(); 2];
+    let mut rope = vec![Point::default(); 10];
     let mut tail_visited = vec![];
 
     for line in data.split('\n') {
@@ -127,7 +127,9 @@ fn main() -> Result<()> {
             for segment in rope.iter().skip(1) {
                 let diff = cursor - *segment;
                 let diff = grid_normalize(diff);
-                new_rope.push(cursor - diff);
+                let new_segment = cursor - diff;
+                new_rope.push(new_segment);
+                cursor = new_segment;
             }
             rope = new_rope;
             tail_visited.push(*rope.last().expect("`rope` must have at least one element"));
