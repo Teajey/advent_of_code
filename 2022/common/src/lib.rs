@@ -1,7 +1,14 @@
-use std::io::Read;
+use std::{fmt::Display, io::Read};
 
 #[derive(Debug)]
 pub struct Failure(String);
+
+impl Display for Failure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)?;
+        Ok(())
+    }
+}
 
 impl Failure {
     pub fn from(value: String) -> Self {

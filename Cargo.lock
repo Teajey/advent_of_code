@@ -7,6 +7,13 @@ name = "camp_cleanup"
 version = "0.1.0"
 
 [[package]]
+name = "cathode-ray_tube"
+version = "0.1.0"
+dependencies = [
+ "common",
+]
+
+[[package]]
 name = "common"
 version = "0.1.0"
 
