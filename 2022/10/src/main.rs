@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use common::*;
 
 enum Instruction {
@@ -30,9 +32,43 @@ impl TryFrom<&str> for Instruction {
     }
 }
 
+#[derive(Debug)]
+struct CathodeRayTube([bool; 40 * 6]);
+
+impl CathodeRayTube {
+    fn update_pixel(&mut self, x: i32, cycle_index: i32) {
+        let px = cycle_index % (40 * 6);
+        let px_x = px % 40;
+
+        let range = x - 1..=x + 1;
+
+        if range.contains(&px_x) {
+            self.0[px as usize] = true;
+        }
+    }
+}
+
+impl Display for CathodeRayTube {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let pixels = self
+            .0
+            .into_iter()
+            .map(|on| if on { '#' } else { '.' })
+            .collect::<String>();
+
+        for i in 0..6 {
+            let y_start = i * 40;
+            writeln!(f, "{}", &pixels[y_start..y_start + 40])?;
+        }
+
+        Ok(())
+    }
+}
+
 struct CentralProcessingUnit {
     x: i32,
-    cycle_index: u32,
+    cycle_index: i32,
+    tube: CathodeRayTube,
 }
 
 impl CentralProcessingUnit {
@@ -40,212 +76,48 @@ impl CentralProcessingUnit {
         Self {
             x: 1,
             cycle_index: 0,
+            tube: CathodeRayTube([false; 40 * 6]),
         }
     }
 
-    fn cycle(&mut self, signal_strengths: &mut Vec<i32>) {
-        let ord = (self.cycle_index + 1) as i32;
-
-        if (ord - 20) % 40 == 0 {
-            signal_strengths.push(ord * self.x);
-        }
+    fn cycle(&mut self) {
+        self.tube.update_pixel(self.x, self.cycle_index);
 
         self.cycle_index += 1;
     }
 
-    fn run_instruction(&mut self, instruction: Instruction, signal_strengths: &mut Vec<i32>) {
+    fn run_instruction(&mut self, instruction: Instruction) {
         match instruction {
             Instruction::AddX(v) => {
-                self.cycle(signal_strengths);
-                self.cycle(signal_strengths);
+                self.cycle();
+                self.cycle();
                 self.x += v;
             }
             Instruction::NoOp => {
-                self.cycle(signal_strengths);
+                self.cycle();
             }
         }
     }
-}
 
-fn get_signal_strengths_sum(raw_instructions: &str) -> Result<Vec<i32>> {
-    let mut cpu = CentralProcessingUnit::new();
-    let mut signal_strengths = vec![];
+    fn execute_code(&mut self, code: &str) -> Result<()> {
+        for line in code.split('\n') {
+            let instruction = Instruction::try_from(line)?;
 
-    for line in raw_instructions.split('\n') {
-        let instruction = Instruction::try_from(line)?;
+            self.run_instruction(instruction);
+        }
 
-        cpu.run_instruction(instruction, &mut signal_strengths);
+        Ok(())
     }
-
-    Ok(signal_strengths)
 }
 
 fn main() -> Result<()> {
     let data = get_input()?;
 
-    let signal_strengths = get_signal_strengths_sum(&data)?;
+    let mut cpu = CentralProcessingUnit::new();
 
-    println!("{}", signal_strengths.into_iter().sum::<i32>());
+    cpu.execute_code(&data)?;
+
+    println!("{}", cpu.tube);
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Result;
-    #[test]
-    fn get_signal_strengths_sum() -> Result<()> {
-        let raw_instructions = r#"addx 15
-addx -11
-addx 6
-addx -3
-addx 5
-addx -1
-addx -8
-addx 13
-addx 4
-noop
-addx -1
-addx 5
-addx -1
-addx 5
-addx -1
-addx 5
-addx -1
-addx 5
-addx -1
-addx -35
-addx 1
-addx 24
-addx -19
-addx 1
-addx 16
-addx -11
-noop
-noop
-addx 21
-addx -15
-noop
-noop
-addx -3
-addx 9
-addx 1
-addx -3
-addx 8
-addx 1
-addx 5
-noop
-noop
-noop
-noop
-noop
-addx -36
-noop
-addx 1
-addx 7
-noop
-noop
-noop
-addx 2
-addx 6
-noop
-noop
-noop
-noop
-noop
-addx 1
-noop
-noop
-addx 7
-addx 1
-noop
-addx -13
-addx 13
-addx 7
-noop
-addx 1
-addx -33
-noop
-noop
-noop
-addx 2
-noop
-noop
-noop
-addx 8
-noop
-addx -1
-addx 2
-addx 1
-noop
-addx 17
-addx -9
-addx 1
-addx 1
-addx -3
-addx 11
-noop
-noop
-addx 1
-noop
-addx 1
-noop
-noop
-addx -13
-addx -19
-addx 1
-addx 3
-addx 26
-addx -30
-addx 12
-addx -1
-addx 3
-addx 1
-noop
-noop
-noop
-addx -9
-addx 18
-addx 1
-addx 2
-noop
-noop
-addx 9
-noop
-noop
-noop
-addx -1
-addx 2
-addx -37
-addx 1
-addx 3
-noop
-addx 15
-addx -21
-addx 22
-addx -6
-addx 1
-noop
-addx 2
-addx 1
-noop
-addx -10
-noop
-noop
-addx 20
-addx 1
-addx 2
-addx 2
-addx -6
-addx -11
-noop
-noop
-noop"#;
-
-        let signal_strengths = super::get_signal_strengths_sum(raw_instructions)?;
-
-        assert_eq!(signal_strengths.into_iter().sum::<i32>(), 13140);
-
-        Ok(())
-    }
 }
