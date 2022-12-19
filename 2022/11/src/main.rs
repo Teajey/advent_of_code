@@ -2,9 +2,11 @@ use std::collections::VecDeque;
 
 use common::*;
 
+type Number = u64;
+
 #[derive(Debug, PartialEq, Clone)]
 enum Operand {
-    Num(u32),
+    Num(Number),
     Old,
 }
 
@@ -56,11 +58,11 @@ impl TryFrom<&str> for Operation {
 
 #[derive(Debug, PartialEq, Clone)]
 struct Monkey {
-    items: VecDeque<u32>,
+    items: VecDeque<Number>,
     operation: Operation,
-    divisor: u32,
+    divisor: Number,
     catchers: (usize, usize),
-    items_inspected: u32,
+    items_inspected: Number,
 }
 
 impl TryFrom<&str> for Monkey {
@@ -81,7 +83,7 @@ impl TryFrom<&str> for Monkey {
                     .next()
                     .ok_or_else(|| e!("Expected number token"))?;
                 let num_token = num_token
-                    .parse::<u32>()
+                    .parse::<Number>()
                     .map_err(|err| e!("Couldn't parse number token: {err}"))?;
                 Ok(num_token)
             })
@@ -101,7 +103,7 @@ impl TryFrom<&str> for Monkey {
                 divisible_by_line.trim()
             )
         })?;
-        let divisor: u32 = divisor_token
+        let divisor: Number = divisor_token
             .parse()
             .map_err(|err| e!("Couldn't parse divisor {err}"))?;
 
@@ -141,7 +143,7 @@ impl TryFrom<&str> for Monkey {
 }
 
 impl Monkey {
-    fn throw_item(&mut self) -> Option<(usize, u32)> {
+    fn throw_item(&mut self, product: Number) -> Option<(usize, Number)> {
         self.items.pop_front().map(|item| {
             let item = match self.operation {
                 Operation::Add(Operand::Num(num)) => item + num,
@@ -149,7 +151,7 @@ impl Monkey {
                 Operation::Multiply(Operand::Num(num)) => item * num,
                 Operation::Multiply(Operand::Old) => item * item,
             };
-            let item = item / 3;
+            let item = item % product;
             let throw = if item % self.divisor == 0 {
                 (self.catchers.0, item)
             } else {
@@ -161,12 +163,15 @@ impl Monkey {
         })
     }
 
-    fn catch_item(&mut self, item: u32) {
+    fn catch_item(&mut self, item: Number) {
         self.items.push_front(item);
     }
 }
 
-struct Monkeys(Vec<Monkey>);
+struct Monkeys {
+    barrel: Vec<Monkey>,
+    product: Number,
+}
 
 impl TryFrom<&str> for Monkeys {
     type Error = Failure;
@@ -176,57 +181,46 @@ impl TryFrom<&str> for Monkeys {
             .split("\n\n")
             .map(Monkey::try_from)
             .collect::<Result<Vec<_>>>()?;
-        Ok(Self(monkeys))
+        let product = monkeys.iter().map(|m| m.divisor).product();
+        Ok(Self {
+            barrel: monkeys,
+            product,
+        })
     }
 }
 
 impl Monkeys {
-    fn snapshot(&self) -> Result<String> {
-        use std::fmt::Write;
-
-        let mut buf = String::new();
-        for (i, monkey) in self.0.iter().enumerate() {
-            write!(buf, "Monkey {i}: ").map_err(|err| e!("Couldn't write to buf: {err}"))?;
-            for item in &monkey.items {
-                write!(buf, "{item}, ").map_err(|err| e!("Couldn't write to buf: {err}"))?;
-            }
-            writeln!(buf).map_err(|err| e!("Couldn't write to buf: {err}"))?;
-        }
-
-        Ok(buf)
-    }
-
     fn round_of_monkey_business(mut self) -> Result<Self> {
-        for i in 0..self.0.len() {
-            let mut thrower = self.0[i].clone();
-            while let Some((index, item)) = thrower.throw_item() {
-                let mut catcher = self.0[index].clone();
+        for i in 0..self.barrel.len() {
+            let mut thrower = self.barrel[i].clone();
+            while let Some((index, item)) = thrower.throw_item(self.product) {
+                let mut catcher = self.barrel[index].clone();
                 catcher.catch_item(item);
-                let _ = std::mem::replace(&mut self.0[index], catcher);
+                let _ = std::mem::replace(&mut self.barrel[index], catcher);
             }
-            let _ = std::mem::replace(&mut self.0[i], thrower);
+            let _ = std::mem::replace(&mut self.barrel[i], thrower);
         }
 
         Ok(self)
     }
 }
 
-fn monkey_business_from_input(input: &str) -> Result<u32> {
+fn monkey_business_from_input(input: &str) -> Result<Number> {
     let mut monkeys = Monkeys::try_from(input)?;
 
-    for i in 0..20 {
+    for _ in 0..10_000 {
         monkeys = monkeys.round_of_monkey_business()?;
     }
 
     let mut monkeys = monkeys
-        .0
+        .barrel
         .into_iter()
         .map(|monkey| monkey.items_inspected)
         .collect::<Vec<_>>();
 
     monkeys.sort();
 
-    let answer = monkeys.into_iter().rev().take(2).product::<u32>();
+    let answer = monkeys.into_iter().rev().take(2).product::<Number>();
 
     Ok(answer)
 }
@@ -322,15 +316,12 @@ Monkey 2:
         };
 
         let items = [
-            monkey.throw_item(),
-            monkey.throw_item(),
-            monkey.throw_item(),
+            monkey.throw_item(monkey.divisor),
+            monkey.throw_item(monkey.divisor),
+            monkey.throw_item(monkey.divisor),
         ];
 
-        assert_eq!(
-            &[Some((1, 2080)), Some((3, 1200)), Some((3, 3136))],
-            &items[..]
-        );
+        assert_eq!(&[Some((3, 1)), Some((3, 12)), Some((3, 10))], &items[..]);
 
         Ok(())
     }
@@ -367,7 +358,7 @@ Test: divisible by 17
 
         let monkey_business = super::monkey_business_from_input(input)?;
 
-        assert_eq!(10605, monkey_business);
+        assert_eq!(2713310158, monkey_business);
 
         Ok(())
     }
