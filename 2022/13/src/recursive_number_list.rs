@@ -25,7 +25,16 @@ impl PartialOrd for Oor<u8> {
     }
 }
 
-fn oor_from_str(string: &str) -> Result<Oor<u8>> {
+impl Ord for Oor<u8> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self.partial_cmp(other) {
+            Some(ordering) => ordering,
+            None => unreachable!(),
+        }
+    }
+}
+
+pub(super) fn oor_from_str(string: &str) -> Result<Oor<u8>> {
     let oor = match string
         .chars()
         .next()
