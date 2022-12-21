@@ -110,6 +110,8 @@ pub(super) fn from_str(string: &str) -> Result<Vec<Oor<u8>>> {
 
 #[cfg(test)]
 mod test {
+    use std::cmp::Ordering;
+
     use common::Result;
 
     use super::Oor;
@@ -171,41 +173,41 @@ mod test {
     }
 
     #[test]
-    fn partial_cmp() -> Result<()> {
+    fn cmp() -> Result<()> {
         let a = super::from_str("[1,1,3,1,1]")?;
         let b = super::from_str("[1,1,5,1,1]")?;
 
-        assert_eq!(Some(std::cmp::Ordering::Less), a.partial_cmp(&b));
+        assert_eq!(Ordering::Less, a.cmp(&b));
 
         let a = super::from_str("[[1],[2,3,4]]")?;
         let b = super::from_str("[[1],4]")?;
 
-        assert_eq!(Some(std::cmp::Ordering::Less), a.partial_cmp(&b));
+        assert_eq!(Ordering::Less, a.cmp(&b));
 
         let a = super::from_str("[9]")?;
         let b = super::from_str("[[8,7,6]]")?;
 
-        assert_eq!(Some(std::cmp::Ordering::Greater), a.partial_cmp(&b));
+        assert_eq!(Ordering::Greater, a.cmp(&b));
 
         let a = super::from_str("[[4,4],4,4]")?;
         let b = super::from_str("[[4,4],4,4,4]")?;
 
-        assert_eq!(Some(std::cmp::Ordering::Less), a.partial_cmp(&b));
+        assert_eq!(Ordering::Less, a.cmp(&b));
 
         let a = super::from_str("[7,7,7,7]")?;
         let b = super::from_str("[7,7,7]")?;
 
-        assert_eq!(Some(std::cmp::Ordering::Greater), a.partial_cmp(&b));
+        assert_eq!(Ordering::Greater, a.cmp(&b));
 
         let a = super::from_str("[[[]]]")?;
         let b = super::from_str("[[]]")?;
 
-        assert_eq!(Some(std::cmp::Ordering::Greater), a.partial_cmp(&b));
+        assert_eq!(Ordering::Greater, a.cmp(&b));
 
         let a = super::from_str("[1,[2,[3,[4,[5,6,7]]]],8,9]")?;
         let b = super::from_str("[1,[2,[3,[4,[5,6,0]]]],8,9]")?;
 
-        assert_eq!(Some(std::cmp::Ordering::Greater), a.partial_cmp(&b));
+        assert_eq!(Ordering::Greater, a.cmp(&b));
 
         Ok(())
     }
