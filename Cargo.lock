@@ -47,6 +47,13 @@ name = "no_space_left_on_device"
 version = "0.1.0"
 
 [[package]]
+name = "regolith_reservoir"
+version = "0.1.0"
+dependencies = [
+ "common",
+]
+
+[[package]]
 name = "rock_paper_scissors"
 version = "0.1.0"
 
