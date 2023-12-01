@@ -1,0 +1,6 @@
+var searchIndex = JSON.parse('{\
+"common":{"doc":"","t":[3,6,11,11,14,11,11,11,5,11,11,11,11],"n":["Failure","Result","borrow","borrow_mut","e","fmt","from","from","get_input","into","try_from","try_into","type_id"],"q":["common","","","","","","","","","","","",""],"d":["","","","","","","","Returns the argument unchanged.","","Calls <code>U::from(self)</code>.","","",""],"i":[0,0,1,1,0,1,1,1,0,1,1,1,1],"f":[0,0,[[]],[[]],0,[[1,2],3],[4,1],[[]],[[],[[5,[4]]]],[[]],[[],6],[[],6],[[],7]],"p":[[3,"Failure"],[3,"Formatter"],[6,"Result"],[3,"String"],[6,"Result"],[4,"Result"],[3,"TypeId"]]},\
+"treetop_tree_house":{"doc":"","t":[5,0,12,3,11,11,11,11,11,11,11,11],"n":["main","matrix","0","Matrix","borrow","borrow_mut","from","into","try_from","try_from","try_into","type_id"],"q":["treetop_tree_house","","treetop_tree_house::matrix","","","","","","","","",""],"d":["","","","","","","Returns the argument unchanged.","Calls <code>U::from(self)</code>.","","","",""],"i":[0,0,4,0,4,4,4,4,4,4,4,4],"f":[[[],1],0,0,0,[[]],[[]],[[]],[[]],[[],2],[3,[[1,[4]]]],[[],2],[[],5]],"p":[[6,"Result"],[4,"Result"],[3,"String"],[3,"Matrix"],[3,"TypeId"]]}\
+}');
+if (typeof window !== 'undefined' && window.initSearch) {window.initSearch(searchIndex)};
+if (typeof exports !== 'undefined') {exports.searchIndex = searchIndex};
