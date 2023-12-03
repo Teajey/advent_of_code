@@ -67,37 +67,25 @@ func parseGame(str string) (id int, reveals []reveal) {
 	return
 }
 
-func gameIsValid(game []reveal, rLim int, gLim int, bLim int) bool {
-	for _, r := range game {
-		if r.red > rLim {
-			return false
+func minimumSet(game []reveal) (r int, g int, b int) {
+	for _, rev := range game {
+		if rev.red > r {
+			r = rev.red
 		}
-		if r.green > gLim {
-			return false
+		if rev.green > g {
+			g = rev.green
 		}
-		if r.blue > bLim {
-			return false
+		if rev.blue > b {
+			b = rev.blue
 		}
 	}
-	return true
+	return r, g, b
 }
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	if len(os.Args) != 4 {
 		log.Fatalln("Args must be len() == 4: ", os.Args)
-	}
-	redLimit, err := strconv.Atoi(os.Args[1])
-	if err != nil {
-		log.Fatalln("Red is not int: ", err)
-	}
-	greenLimit, err := strconv.Atoi(os.Args[2])
-	if err != nil {
-		log.Fatalln("Green is not int: ", err)
-	}
-	blueLimit, err := strconv.Atoi(os.Args[3])
-	if err != nil {
-		log.Fatalln("Blue is not int: ", err)
 	}
 	var n int
 	for {
@@ -112,13 +100,8 @@ func main() {
 		fmt.Println(line)
 		id, game := parseGame(line)
 		fmt.Printf("game %v: %#v\n", id, game)
-		valid := gameIsValid(game, redLimit, greenLimit, blueLimit)
-		if valid {
-			n += id
-			fmt.Print("valid!\n")
-		} else {
-			fmt.Print("not valid...\n")
-		}
+		r, g, b := minimumSet(game)
+		n += r * g * b
 	}
 	fmt.Println(n)
 }
